@@ -1,13 +1,13 @@
 /*
-  Script to validate a WFS Service and all the supported Feature Types
-
-  Created by ${USER} on ${DATE}.
-
-  @author <a href="anna-lena.hock@bkg.bund.de">Anna-Lena Hock</a>
- * @version $LastChangedDate$ - $Rev$
+ * This file is part of the wfs-ft-validator project.
+ * Copyright (c) 2017 Bundesamt für Kartographie und Geodäsie <http://bkg.bund.de>
+ *
+ * Licensed under MIT License.
+ * See the LICENSE file in the project root for more information.
  */
 
 package org.gdz.wfs.validator;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -38,6 +38,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Script to validate a WFS Service and all the supported Feature Types.
+ *
+ * @author Anna-Lena Hock (ahock-bkg)
+ */
 public class Script {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Script.class);
@@ -181,7 +186,7 @@ public class Script {
             Schema schema = schemaFactory.newSchema(new StreamSource(new StringReader(schemaResponseString)));
             Validator validator = schema.newValidator();
 
-            final List<SAXParseException> exceptions = new LinkedList<SAXParseException>();
+            final List<SAXParseException> exceptions = new LinkedList<>();
             validator.setErrorHandler(new ErrorHandler()
             {
                 @Override
@@ -214,9 +219,7 @@ public class Script {
             {
                 LOGGER.info("FeatureType is valid");
             }
-        } catch (SAXException e) {
-            LOGGER.info("Error validating Capabilities against Schema!  {}", e.getLocalizedMessage());
-        } catch (IOException e) {
+        } catch (SAXException | IOException e) {
             LOGGER.info("Error validating Capabilities against Schema!  {}", e.getLocalizedMessage());
         }
     }
