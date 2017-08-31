@@ -47,6 +47,8 @@ public class Script {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Script.class);
 
+    private static final SchemaFactory SCHEMA_FACTORY = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+
     /** starting point
      * @param args program arguments: first argument is the URL of the Service
      */
@@ -81,6 +83,16 @@ public class Script {
      */
     private static void validateFeatureTypes(ArrayList<String> featureTypes, String serviceUrl) throws Exception {
 
+        LOGGER.info("----------------------------Building Schema for WFS----------------------------");
+        String requestSchema = serviceUrl + "?SERVICE=WFS&VERSION=1.1.0&REQUEST=DescribeFeatureType&OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1";
+        String schemaResponseString = getStringFromRequest(requestSchema);
+
+        //Missing Includes for wfs schema have to be included manually: wfs:FeatureCollection
+        schemaResponseString = schemaResponseString.replace("</schema>", "<import namespace=\"http://www.opengis.net/wfs/2.0\" schemaLocation=\"http://schemas.opengis.net/wfs/2.0/wfs.xsd\"/>\n</schema>");
+
+        Schema schema = SCHEMA_FACTORY.newSchema(new StreamSource(new StringReader(schemaResponseString)));
+
+
         try{
             String getFeatureRequestKvp = "?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=%s&COUNT=10";
             for (String type : featureTypes) {
@@ -97,8 +109,7 @@ public class Script {
                 Document featureResponseDoc = getDocumentFromString(featureResponseString);
                 validateHrefs(featureResponseDoc, serviceUrl);
 
-                String schema = type.split(":")[0];
-                validateSchema(featureResponseString, schema, type, serviceUrl);
+                validateSchema(featureResponseString, schema);
             }
         } catch (IOException e) {
             throw new Exception("XML Parser error: " + e.getMessage(), e);
@@ -170,20 +181,12 @@ public class Script {
 
     /** Requests the feature type schema (DescribeFeatureType) and validates the GetFeature response with it
      * @param getFeatureResponse The list of features returned from GetFeature request
-     * @param dbSchema the schema of the feature type for example tn-a
-     * @param featureType the name of the feature type for example tn-a:AerodromeArea
-     * @param serviceUrl the URL of the service
+     * @param schema the complete schema of the WFS
      */
-    private static void validateSchema(String getFeatureResponse, String dbSchema, String featureType, String serviceUrl) throws Exception {
+    private static void validateSchema(String getFeatureResponse, Schema schema)
+            throws Exception
+    {
         try {
-            SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-            String requestSchema = String.format(serviceUrl + "?SERVICE=WFS&VERSION=1.1.0&REQUEST=DescribeFeatureType&OUTPUTFORMAT=text%%2Fxml%%3B+subtype%%3Dgml%%2F3.2.1&TYPENAME=%s&NAMESPACE=xmlns(tn-a=http%%3A%%2F%%2Finspire.ec.europa.eu%%2Fschemas%%2F%s%%2F4.0)", featureType, dbSchema);
-            String schemaResponseString = getStringFromRequest(requestSchema);
-
-            //Missing Includes for wfs schema have to be included manually: wfs:FeatureCollection
-            schemaResponseString = schemaResponseString.replace("</schema>", "<import namespace=\"http://www.opengis.net/wfs/2.0\" schemaLocation=\"http://schemas.opengis.net/wfs/2.0/wfs.xsd\"/>\n</schema>");
-
-            Schema schema = schemaFactory.newSchema(new StreamSource(new StringReader(schemaResponseString)));
             Validator validator = schema.newValidator();
 
             final List<SAXParseException> exceptions = new LinkedList<>();
