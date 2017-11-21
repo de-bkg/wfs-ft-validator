@@ -8,6 +8,7 @@
 
 package org.gdz.wfs.validator;
 
+import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -33,10 +34,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.net.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Script to validate a WFS Service and all the supported Feature Types.
@@ -49,18 +47,15 @@ public class Script {
 
     private static final SchemaFactory SCHEMA_FACTORY = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 
+    private static int featureCount = 10;
+
     /** starting point
      * @param args program arguments: first argument is the URL of the Service
      */
     public static void main(String args[]) throws Exception{
 
-        if(args == null || args.length < 1){
-            throw new IllegalArgumentException("Arguments are missing!");
-        }
-
-        String serviceUrl = args[0];
+        String serviceUrl = parseCommandLine(args);
         LOGGER.info("Validating service: {}", serviceUrl);
-
 
         String capabilitiesRequestKvp = "?service=WFS&request=GetCapabilities";
 
@@ -73,18 +68,75 @@ public class Script {
         Document capabilitiesResponse = getDocumentFromString(capabilitiesString);
         ArrayList<String> featureTypes = getFeatureTypes(capabilitiesResponse);
 
-        validateFeatureTypes(featureTypes, serviceUrl);
+        int numberOfErrors = validateFeatureTypes(featureTypes, serviceUrl);
 
+        System.exit(numberOfErrors == 0 ? 0 : 2);
+    }
+
+    /**
+     * Creates the programm options for parsing the command line.
+     */
+    private static Options createProgrammOptions() {
+        Options options = new Options();
+
+        options.addOption(
+                Option.builder().longOpt("count")
+                        .desc("Number of features to test with each request.")
+                        .hasArg()
+                        .argName("NUMBER")
+                        .build()
+        );
+
+        // TODO: additional arguments: resolve depth, mandatory features
+
+        return options;
+    }
+
+    /**
+     * Prints the help for the programm options.
+     */
+    private static void printHelp(Options options) {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("wfs-ft-validator", options);
+    }
+
+    /**
+     * Parses the command line and assigns all properties.
+     *
+     * @param args - the command line arguments
+     */
+    private static String parseCommandLine(String[] args) throws Exception {
+        Options options = createProgrammOptions();
+        CommandLineParser parser = new DefaultParser();
+        try {
+            // parse the command line arguments
+            CommandLine commandLine = parser.parse(options, args);
+
+            // arguments
+            if (commandLine.getArgList().size() < 1)
+                throw new IllegalArgumentException("Missing WFS URL for testing.");
+
+            // Options
+            if (commandLine.hasOption("count"))
+                featureCount = Integer.valueOf(commandLine.getOptionValue("count"));
+
+            return commandLine.getArgList().get(0);
+        } catch (Exception exp) {
+            System.out.println("Error parsing arguments: " + exp.getMessage());
+            printHelp(options);
+            System.exit(1);
+            return null;    // never reached!
+        }
     }
 
     /** Validate the schema and hrefs of an array of feature types
      * @param featureTypes to be validated feature types
      * @param serviceUrl the URL of the service
      */
-    private static void validateFeatureTypes(ArrayList<String> featureTypes, String serviceUrl) throws Exception {
+    private static int validateFeatureTypes(ArrayList<String> featureTypes, String serviceUrl) throws Exception {
 
         LOGGER.info("----------------------------Building Schema for WFS----------------------------");
-        String requestSchema = serviceUrl + "?SERVICE=WFS&VERSION=1.1.0&REQUEST=DescribeFeatureType&OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1";
+        String requestSchema = serviceUrl + "?SERVICE=WFS&VERSION=2.0.0&REQUEST=DescribeFeatureType&OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1";
         String schemaResponseString = getStringFromRequest(requestSchema);
 
         //Missing Includes for wfs schema have to be included manually: wfs:FeatureCollection
@@ -92,9 +144,10 @@ public class Script {
 
         Schema schema = SCHEMA_FACTORY.newSchema(new StreamSource(new StringReader(schemaResponseString)));
 
+        int numberOfErrors = 0;
 
         try{
-            String getFeatureRequestKvp = "?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=%s&COUNT=10";
+            String getFeatureRequestKvp = "?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=%s&COUNT=" + featureCount;
             for (String type : featureTypes) {
 
                 LOGGER.info("----------------------------Validating Feature Type {}----------------------------", type);
@@ -107,6 +160,7 @@ public class Script {
                 }
 
                 Document featureResponseDoc = getDocumentFromString(featureResponseString);
+                // TODO: check number of returned features; if 0 -> warning
                 validateHrefs(featureResponseDoc, serviceUrl);
 
                 validateSchema(featureResponseString, schema);
@@ -117,6 +171,8 @@ public class Script {
         } catch (Exception e) {
             throw new Exception("Error reading Response: " + e.getMessage(), e);
         }
+
+        return numberOfErrors;
     }
 
     /** Get the supported feature types from the GetCapabilities response
