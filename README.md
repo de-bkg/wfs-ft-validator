@@ -30,8 +30,8 @@ editing the `DEFAULT_JVM_OPTS` variable within the start script for your OS or b
  
 Example Usage Linux:
 
-    export JAVA_OPTS="-Dhttp.proxyHost=your-proxy.net -Dhttp.proxyPort=80 -Dhttp.noProxyHosts=*.bkg"
+    export JAVA_OPTS="-Dhttp.proxyHost=your-proxy.net -Dhttp.proxyPort=80 -Dhttp.nonProxyHosts=*.bkg"
 
 Example Usage Windows:
 
-    SET "JAVA_OPTS=-Dhttp.proxyHost=your-proxy.net -Dhttp.proxyPort=80 -Dhttp.noProxyHosts=*.bkg"
+    SET "JAVA_OPTS=-Dhttp.proxyHost=your-proxy.net -Dhttp.proxyPort=80 -Dhttp.nonProxyHosts=*.bkg"
