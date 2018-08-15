@@ -4,7 +4,7 @@ apply plugin: 'application'
 group = 'org.gdz.wfs.validator'
 version = '0.1'
 
-mainClassName = "org.gdz.wfs.validator.Script"
+mainClassName = "org.gdz.wfs.validator.WfsValidator"
 
 repositories {
     mavenCentral()
