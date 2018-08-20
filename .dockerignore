@@ -1,0 +1,8 @@
+.gradle
+.idea
+src
+build/classes
+build/libs
+build/resources
+build/scripts
+build/tmp

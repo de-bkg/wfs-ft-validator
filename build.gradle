@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'application'
 
 group = 'org.gdz.wfs.validator'
-version = '0.1'
+version = '0.2'
 
 mainClassName = "org.gdz.wfs.validator.WfsValidator"
 
