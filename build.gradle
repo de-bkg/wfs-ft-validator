@@ -1,6 +1,6 @@
 buildscript {
     repositories { mavenCentral() }
-    dependencies { classpath 'org.owasp:dependency-check-gradle:6.5.2' }
+    dependencies { classpath 'org.owasp:dependency-check-gradle:7.2.0' }
 }
 
 apply plugin: 'java'
