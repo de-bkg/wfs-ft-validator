@@ -9,8 +9,9 @@
 package org.gdz.wfs.validator;
 
 import org.apache.commons.cli.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.cli.Options;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -45,7 +46,7 @@ public class WfsValidator {
 
     // == Static =======================================================================================================
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(WfsValidator.class);
+    private static final Logger LOGGER = LogManager.getLogger(WfsValidator.class);
 
     private static final SchemaFactory SCHEMA_FACTORY = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 
