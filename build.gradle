@@ -28,6 +28,6 @@ dependencies {
 
 dependencyCheck {
     data {
-        failBuildOnCVSS = 11
+        failBuildOnCVSS = 4
     }
 }
