@@ -2,7 +2,7 @@
 # wfs-validator Docker Image
 #====================================================
 
-FROM openjdk:10
+FROM openjdk:21
 MAINTAINER Dirk Thalheim<dirk.thalheim@bkg.bund.de>
 
 ENV VALIDATOR_HOME=/opt/wfs-ft-validator
